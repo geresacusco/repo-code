@@ -1,0 +1,12 @@
+name: repositorio
+title: repositorio
+username:
+account: comandocovid19cusco
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3522563
+bundleId: 4142976
+url: https://comandocovid19cusco.shinyapps.io/repositorio/
+when: 1611629667.83287
+asMultiple: FALSE
+asStatic: FALSE
