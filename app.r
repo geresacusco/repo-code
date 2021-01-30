@@ -25,9 +25,10 @@ options(spinner.color="#0080db",spinner.type=1)
 
 
 # download data.table
-table_recibidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_recibidos.csv')
-table_emitidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos.csv')
-table_otros <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_otros.csv')
+table_recibidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_recibidos.csv', sep = ";", header = TRUE)
+table_emitidos_multiple <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos_multiples.csv', sep = ";")
+table_emitidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos.csv', sep = ";")
+table_otros <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_otros.csv', sep = ";")
 
 #load helper scripts
 source("EEF scripts/dygraph-extra-shiny.R",local=TRUE)
@@ -83,7 +84,9 @@ ui <- fluidPage(
   eefSection(NS("equality","NPF"),"Documentos remitidos",
              colour="eef-section-links",
              class="eef-section eef eef-main eef-summ",
-             tabs = box( width = 12, DT::dataTableOutput("emitidos"))),
+             tabs = 
+               box( width = 12, DT::dataTableOutput("emitidos")),
+             box(width = 12, DT::dataTableOutput("emitidos_multiple"))),
   br(),
   eefSection(NS("equality","NPF"),"Otros documentos",
              colour="eef-section-links",
@@ -132,7 +135,20 @@ server <- function(input,output,session) {
                 searchHighlight = TRUE
               ))
   })
+
+  table_emitidos_multiple$Descarga <- paste0("<a href='",table_emitidos_multiple$Descarga,">RStudio</a>' target='_blank'>","Descarga","</a>")
   
+  
+  output$emitidos_multiple = DT::renderDataTable({
+    datatable(table_emitidos_multiple, escape = FALSE,filter = 'top',
+              options = list(
+                language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
+                pageLength = 25,
+                searchHighlight = TRUE
+              ))
+  })
+  
+    
   table_otros$Descarga <- paste0("<a href='",table_otros$Descarga,">RStudio</a>' target='_blank'>","Descarga","</a>")
   
   
