@@ -1,33 +1,17 @@
 #packages
-library(markdown)
 library(lubridate)
-library(readxl)
-library(openxlsx)
-library(dplyr)
 library(shiny)
 library(shinyjs)
 library(tidyr)
-library(xts)
-library(dygraphs)
-library(zoo)
-library(googleVis)
-library(rmarkdown)
-library(knitr)
 library(shinydashboard)
 library(DT)
-onScots <- !require(RColorBrewer)
-library(googlesheets)
-library(purrr)
-onScots <- !require(SPARQL) #package that doesn't work on Scots. onScots is a flag used to switch off functionality incompatible with Scots
 library(shinycssloaders)
 library(data.table)
-options(spinner.color="#0080db",spinner.type=1)
-
 
 # download data.table
 table_recibidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_recibidos.csv', sep = ";", header = TRUE)
-table_emitidos_multiple <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos_multiples.csv', sep = ";")
-table_emitidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos.csv', sep = ";")
+table_emitidos_multiple <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos_multiples.csv', sep = ",")
+table_emitidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_emitidos.csv', sep = ",")
 table_otros <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_otros.csv', sep = ";")
 
 #load helper scripts
@@ -72,16 +56,13 @@ ui <- fluidPage(
   ##UI components
   shinyjs::hidden(eefHelp()),
   eefHeader("equality"),
-  # eefGrid("equality"),
-  # shinyjs::hidden(eefContent("equality")),
-  # eefHeaderImage(NS("equality","npf"),"National Performance Framework","EEF/Npfbackground.jpg",active=2,class="eef eef-main eef-summ"),
   npfText("eef eef-main eef-summ"),
   eefSection(NS("equality","NPF"),"Documentos recibidos",
              colour="eef-section-links",
              class="eef-section eef eef-main eef-summ",
              tabs = box( width = 12, DT::dataTableOutput("recibidos"))),
   br(),
-  eefSection(NS("equality","NPF"),"Documentos remitidos",
+  eefSection(NS("equality","NPF"),"Documentos emitidos",
              colour="eef-section-links",
              class="eef-section eef eef-main eef-summ",
              tabs = 
@@ -92,17 +73,8 @@ ui <- fluidPage(
              colour="eef-section-links",
              class="eef-section eef eef-main eef-summ",
              tabs = box( width = 12, DT::dataTableOutput("otros"))),
-  br(),
-  # eefHeaderImage(NS("equality","publications"),"Sala Situacional","EEF/blur_sala.jpg",active=2),
-  # eefHeaderImage(NS("equality","contact"),"Analisis de la pandemia","EEF/blur_analisis.jpg",active=3),
-  # eefContactList(allPolicyAreasID[allPolicyAreasID!="summ"]),
-  br(),br(),
+  br(),br(),br(),
   eefFooter(NS("equality","top")),
-  # HTML("<script src='https://cc.cdn.civiccomputing.com/8/cookieControl-8.x.min.js'></script>"),
-  # HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-128676670-1'></script>"),#main account
-  #HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-128846881-1'></script>"),#test accout
-  # tags$script(src="javascript/eef-cookies.js")
-  #tags$script("CookieControl.load( config );")
   
 )
 
@@ -111,9 +83,9 @@ graphOptions[["incPov-11"]]$updateNPF <- TRUE
 server <- function(input,output,session) {
   
   
-  #Table test
+#Tables
     
-  table_recibidos$Descarga <- paste0("<a href='",table_recibidos$Descarga,">RStudio</a>' target='_blank'>","Descarga","</a>")
+  table_recibidos$Descarga <- paste0("<a href='",table_recibidos$Descarga,"' target='_blank'>","Descarga","</a>")
   
   output$recibidos = DT::renderDataTable({
     datatable(table_recibidos, escape = FALSE,filter = 'top',
@@ -124,7 +96,7 @@ server <- function(input,output,session) {
                 ))
   })
   
-  table_emitidos$Descarga <- paste0("<a href='",table_emitidos$Descarga,">RStudio</a>' target='_blank'>","Descarga","</a>")
+  table_emitidos$Descarga <- paste0("<a href='",table_emitidos$Descarga,"' target='_blank'>","Descarga","</a>")
   
   
   output$emitidos = DT::renderDataTable({
@@ -136,7 +108,7 @@ server <- function(input,output,session) {
               ))
   })
 
-  table_emitidos_multiple$Descarga <- paste0("<a href='",table_emitidos_multiple$Descarga,">RStudio</a>' target='_blank'>","Descarga","</a>")
+  table_emitidos_multiple$Descarga <- paste0("<a href='",table_emitidos_multiple$Descarga,"' target='_blank'>","Descarga","</a>")
   
   
   output$emitidos_multiple = DT::renderDataTable({
@@ -161,81 +133,7 @@ server <- function(input,output,session) {
               ))
   })
   
-  
-  #count number of connections to the server (i.e. number of users visiting site) and store in a google sheet - This is done in the server and doesn't involve personal data so should be compliant with all privacy regs
-  
-  if(file.exists("gs_token.rds")) {
-    gs_token <- readRDS("gs_token.rds")
-    session$onSessionEnded(function() {
-      gs_auth(gs_token)
-      gs <- gs_title("Equality Evidence Finder",verbose=F)
-      #gs_add_row(gs,input=data.frame(timeStamp=Sys.Date()),verbose=F)
-      row <- month(Sys.Date())-3 + (year(Sys.Date())-2019)*12
-      #gs_edit_cells(gs,input=gs_read(gs)$pageviews[row] + 1,anchor=paste0("B",row+1))
-      gs_edit_cells(gs,input=data.frame(B=gs_read(gs)$pageviews[row] + 1,C=Sys.time()),anchor=paste0("B",row+1),col_names=FALSE) #experimental code for adding last updated time stame
-    })
-  }
-  
-  
-  
-  #links sections
-  callModule(eefPublicationsSectionServer,"equality-publications",reactive({input$policyID}),updatePublications)
-  callModule(eefPublicationsSectionServer,"equality-data",reactive({input$policyID}),updateData)
-  callModule(eefPublicationsSectionServer,"equality-external",reactive({input$policyID}),updateExternal)
-  callModule(eefPublicationsSectionServer,"equality-collection",reactive({input$policyID}),updateGuidance)
-  callModule(eefPublicationsSectionServer,"equality-glossary",reactive({input$policyID}),updateGlossary)
-  callModule(npfSectionServer,"equality-NPF")
-  
-  #summary sections
-  lapply(unique(EEFindex$topicID),
-         FUN=function(i) {
-           callModule(eefSummarySectionServer,paste0("equality-",i),i,loadData)
-         })
-  
-   
-  #loadData contains all the data for graphs. Wrapped in a reactive expression to allow data to be update "live" from statistics.gov.scot. The reactive expression also means the data will only be loaded when it's needed (i.e. when a user clicks on the relevant section)
-  loadData <- list()
-  loadData[["npf"]] <- reactive({
-    #if(identical(disableODP,TRUE)) return(graph[["npf"]])
-    readData <- readNPFdata()
-    if(is.null(readData)) graph[["npf"]] else readData
-  })
-  
-  loadData[setdiff(names(graph),"npf")] <- lapply(setdiff(names(graph),"npf"),
-                                        function(x) {
-                                          reactive({
-                                            # if(identical(disableODP,TRUE)) {
-                                            #   graph[[x]]
-                                            # } else 
-                                            if(identical(graphOptions[[x]]$updateQuery,TRUE)) {
-                                              EEFsparql(graph[[x]],graphOptions[[x]],x)
-                                            } else if(identical(graphOptions[[x]]$updateNPF,TRUE)) {
-                                             if(is.null(loadData[["npf"]]())) NULL else loadData[["npf"]]() %>% right_join(distinct(graph[[x]],Indicator,Characteristic),by=c("Indicator","Characteristic"))
-                                            } else {
-                                              graph[[x]]
-                                            }
-                                          })
-                                        })
-  
-  lapply(names(graphOptions),
-         FUN=function(x) {
-           if(graphOptions[[x]]$graphType=="npfDataExplorer") callModule(npfServer3,x,loadData[[x]],graphOptions[[x]],filterChar=reactive({input[["equality-NPF-sectionEqualityID"]]}))
-           if(graphOptions[[x]]$graphType=="timeSeries0") callModule(timeSeriesServer0,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-           if(graphOptions[[x]]$graphType=="timeSeries1") callModule(timeSeriesServer1,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="timeSeries2") callModule(timeSeriesServer2,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="lineChart0") callModule(lineChartServer0,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="lineChart1") callModule(lineChartServer1,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="lineChart2") callModule(lineChartServer2,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="pieChart0") callModule(pieChartServer0,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="pieChart1") callModule(pieChartServer1,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="pieChart2") callModule(pieChartServer2,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="barChart0") callModule(barChartServer0,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="barChart1") callModule(barChartServer1,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="barChart2") callModule(barChartServer2,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-             if(graphOptions[[x]]$graphType=="barChart3") callModule(barChartServer3,x,loadData[[x]],graphOptions[[x]],reactive(input$reload))
-         })
-
-}
+ }
 
 #run app
 shinyApp(ui=ui,server=server)
