@@ -4,9 +4,9 @@ username:
 account: comandocovid19cusco
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 3522563
-bundleId: 4157631
+appId: 3686805
+bundleId: 4263353
 url: https://comandocovid19cusco.shinyapps.io/repositorio/
-when: 1611928211.13061
+when: 1614113531.5717
 asMultiple: FALSE
 asStatic: FALSE

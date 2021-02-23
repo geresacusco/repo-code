@@ -2,11 +2,35 @@
 library(lubridate)
 library(shiny)
 library(shinyjs)
+library(shinythemes)
 library(tidyr)
 library(shinydashboard)
 library(DT)
 library(shinycssloaders)
+library(curl)
 library(data.table)
+library(shinymanager)
+
+
+# define some credentials
+credentials <- data.frame(
+  user = "comandoregioncusco", # mandatory
+  password = "042020COV", # mandatory
+  start = "2019-04-15", # optinal (all others)
+  expire = NA,
+  admin = FALSE,
+  comment = "Simple and secure authentification mechanism 
+  for single ‘Shiny’ applications.",
+  stringsAsFactors = FALSE
+)
+
+set_labels(
+  language = "en",
+  "Please authenticate" = "Por favor autenticar",
+  "Username:" = "Usuario:",
+  "Password:" = "Contraseña:",
+  "Login" = "Iniciar sesión"
+)
 
 # download data.table
 table_recibidos <-fread('https://raw.githubusercontent.com/geresacusco/repositorio/master/tabla_recibidos.csv', sep = ";", header = TRUE)
@@ -30,7 +54,7 @@ source("EEF scripts/server_pack.r",local=TRUE)
 source("EEF scripts/server_graphs.r",local=TRUE)
 
 #user interface
-ui <- fluidPage(
+ui <- fluidPage( 
   tags$head(
     tags$meta(charset="utf-8"),
     tags$meta(name="viewport", content="width=device-width, initial-scale=1, shrink-to-fit=no"),
@@ -78,9 +102,25 @@ ui <- fluidPage(
   
 )
 
+# Wrap UI with secure_app
+
+ui <- secure_app(ui,theme = shinythemes::shinytheme("flatly"))
+
+
+
 #shiny server
 graphOptions[["incPov-11"]]$updateNPF <- TRUE 
 server <- function(input,output,session) {
+  
+# call the server part
+# check_credentials returns a function to authenticate users
+  res_auth <- secure_server(
+    check_credentials = check_credentials(credentials)
+  )
+  
+  output$auth_output <- renderPrint({
+    reactiveValuesToList(res_auth)
+  })
   
   
 #Tables
